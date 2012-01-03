@@ -153,7 +153,7 @@ class SSHConnection(object):
         if forward_ssh_agent:
             cmd.append('-A')
         if self.port:
-            cmd += [ '-p', self.port ]
+            cmd += [ '-p', str(self.port) ]
         cmd.append(self.server)
         cmd.append(interpreter)
         return cmd
