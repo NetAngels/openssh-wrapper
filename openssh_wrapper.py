@@ -60,12 +60,12 @@ class SSHConnection(object):
     def check_server(self, server):
         """
         Check the server string for illegal characters.
-        Returns: 
+        Returns:
             Nothing
         Raises:
             SSHError
         """
-        if not re.compile(r'^[a-zA-Z0-9.\-]+$').match(server):
+        if not re.compile(r'^[a-zA-Z0-9.\-_]+$').match(server):
             raise SSHError('Server name contains illegal symbols')
 
     def check_login(self, login):
@@ -76,7 +76,7 @@ class SSHConnection(object):
         Raises:
             SSHError
         """
-        if not re.compile(r'^[a-zA-Z0-9.\-]+$').match(login):
+        if not re.compile(r'^[a-zA-Z0-9.\-_]+$').match(login):
             raise SSHError('User login contains illegal symbols')
 
     def run(self, command, interpreter='/bin/bash', forward_ssh_agent=False):
