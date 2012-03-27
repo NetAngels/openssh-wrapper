@@ -15,7 +15,7 @@ Usage sample
 Simple command execution ::
 
     >>> from openssh_wrapper import SSHConnection
-    >>> conn = SSHConnection('localhost', 'root')
+    >>> conn = SSHConnection('localhost', login='root')
     >>> ret = conn.run('whoami')
     >>> print ret
     command: whoami
@@ -49,7 +49,7 @@ forwarding ::
     $ ssh-add 
     Identity added: /home/me/.ssh/id_rsa (/home/,e/.ssh/id_rsa)
     $ python
-    >>> conn = SSHConnection('localhost', 'root')
+    >>> conn = SSHConnection('localhost', login='root')
     >>> print conn.run('ssh support@foobar "whoami"', forward_ssh_agent=True).stdout
     support
 
@@ -61,7 +61,7 @@ remote machine ::
     >>> fd.write('Hello world')
     >>> fd.close()
     >>> from openssh_wrapper import SSHConnection
-    >>> conn = SSHConnection('localhost', 'root')
+    >>> conn = SSHConnection('localhost', login='root')
     >>> conn.scp('test.txt', target='/tmp')
     >>> print conn.run('cat /tmp/test.txt').stdout
     Hello world

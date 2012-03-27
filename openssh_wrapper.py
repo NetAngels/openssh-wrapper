@@ -12,7 +12,7 @@ class SSHConnection(object):
     It provides methods for command execution and file transfer via scp.
     """
 
-    def __init__(self, server, port=None, login=None, configfile=None, 
+    def __init__(self, server, login=None, port=None, configfile=None,
             identity_file=None, ssh_agent_socket=None, timeout=60):
         """
         Create new object to establish SSH connection to remote
