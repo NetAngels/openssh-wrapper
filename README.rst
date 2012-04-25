@@ -55,13 +55,15 @@ forwarding ::
 
 
 And finally there is a sample which shows how to copy a file from local to
-remote machine ::
+remote machine. You can also define owner and mode of the target ::
 
     >>> fd = open('test.txt', 'w')
     >>> fd.write('Hello world')
     >>> fd.close()
     >>> from openssh_wrapper import SSHConnection
     >>> conn = SSHConnection('localhost', login='root')
-    >>> conn.scp(('test.txt', ), target='/tmp')
+    >>> conn.scp(('test.txt', ), target='/tmp', mode='0666', owner='nobody:')
     >>> print conn.run('cat /tmp/test.txt').stdout
     Hello world
+    >>> print conn.run('ls -l  /tmp/test.txt').stdout
+    -rw-rw-rw- 1 nobody nogroup ... /tmp/test.txt

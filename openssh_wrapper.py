@@ -2,7 +2,7 @@
 """
 This is a wrapper around the openssh binaries ssh and scp.
 """
-import re, os, subprocess, signal
+import re, os, subprocess, signal, pipes
 
 __all__ = 'SSHConnection SSHResult SSHError'.split()
 
@@ -147,6 +147,43 @@ class SSHConnection(object):
         returncode = pipe.returncode
         if returncode != 0: # ssh client error
             raise SSHError(err.strip())
+
+        if mode or owner:
+            targets = self.get_scp_targets(files, target)  # XXX: files VS filenames
+            if mode:
+                cmd_chunks = ['chmod', mode] + targets
+                cmd = ' '.join([pipes.quote(chunk) for chunk in cmd_chunks])
+                result = self.run(cmd)
+                if result.returncode:
+                    raise SSHError(result.stderr.strip())
+            if owner:
+                cmd_chunks = ['chown', owner] + targets
+                cmd = ' '.join([pipes.quote(chunk) for chunk in cmd_chunks])
+                result = self.run(cmd)
+                if result.returncode:
+                    raise SSHError(result.stderr.strip())
+
+
+
+    def get_scp_targets(self, filenames, target):
+        """
+        Given a list of filenames and a target name return the full list of targets
+
+        Internal command which is used to perform chmod and chown.
+
+        For example, get_scp_targets(['foo.txt', 'bar.txt'], '/etc') returns ['/etc/foo.txt', '/etc/bar.txt'],
+        whereas get_scp_targets(['foo.txt', ], '/etc/passwd') returns ['/etc/passwd', ]
+        """
+        result = self.run('test -d %s' % pipes.quote(target))
+        is_directory = result.returncode == 0
+        if is_directory:
+            ret = []
+            for filename in filenames:
+                ret.append(os.path.join(target, os.path.basename(filename)))
+            return ret
+        else:
+            return [target, ]
+
 
     def ssh_command(self, interpreter, forward_ssh_agent):
         """ Build the command string to connect to the server
