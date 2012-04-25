@@ -62,6 +62,6 @@ remote machine ::
     >>> fd.close()
     >>> from openssh_wrapper import SSHConnection
     >>> conn = SSHConnection('localhost', login='root')
-    >>> conn.scp('test.txt', target='/tmp')
+    >>> conn.scp(('test.txt', ), target='/tmp')
     >>> print conn.run('cat /tmp/test.txt').stdout
     Hello world

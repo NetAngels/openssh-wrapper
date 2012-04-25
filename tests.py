@@ -15,11 +15,11 @@ class TestSSHCommandNames(object):
             ['/usr/bin/ssh', '-l', 'root', '-F', 'ssh_config.test', 'localhost', '/bin/bash'])
 
     def test_scp_command(self):
-        eq_(self.c.scp_command('/tmp/1.txt', target='/tmp/2.txt'),
+        eq_(self.c.scp_command(('/tmp/1.txt', ), target='/tmp/2.txt'),
             ['/usr/bin/scp', '-q', '-r', '-F', 'ssh_config.test', '/tmp/1.txt', 'root@localhost:/tmp/2.txt'])
 
     def test_scp_multiple_files(self):
-        eq_(self.c.scp_command('/tmp/1.txt', '2.txt', target='/home/username/'),
+        eq_(self.c.scp_command(('/tmp/1.txt', '2.txt'), target='/home/username/'),
             ['/usr/bin/scp', '-q', '-r', '-F', 'ssh_config.test', '/tmp/1.txt', '2.txt', 'root@localhost:/home/username/'])
 
     def test_simple_command(self):
@@ -52,9 +52,9 @@ class TestSCP(object):
         self.c = SSHConnection('localhost', login='root')
 
     def test_scp(self):
-        self.c.scp(__file__, target='/tmp')
+        self.c.scp((__file__, ), target='/tmp')
         ok_(os.path.isfile('/tmp/tests.py'))
 
     @raises(SSHError)
     def test_scp_to_nonexistent_dir(self):
-        self.c.scp(__file__, target='/abc/def/')
+        self.c.scp((__file__, ), target='/abc/def/')

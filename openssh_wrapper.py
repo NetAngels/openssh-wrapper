@@ -115,12 +115,21 @@ class SSHConnection(object):
             raise SSHError(err.strip())
         return SSHResult(command, out.strip(), err.strip(), returncode)
 
-    def scp(self, *filenames, **kwargs):
+    def scp(self, files, target, mode=None, owner=None):
         """ Copy files identified by their names to remote location
 
-        Optional ``target`` parameter can be used to define target directory
+        :param files: files or file-like objects to copy
+        :param target: target file or directory to copy data to. Target file
+                       makes sense only if the number of files to copy equals
+                       to one.
+        :param mode: optional parameter to define mode for every uploaded file
+                     (must be a string in the form understandable by chmod)
+        :param owner: optional parameter to define user and group for every
+                      uploaded file (must be a string in the form
+                      understandable by chown). Makes sence only if you open
+                      your connection as root.
         """
-        scp_command = self.scp_command(*filenames, **kwargs)
+        scp_command = self.scp_command(files, target)
         pipe = subprocess.Popen(scp_command,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, env=self.get_env())
@@ -158,12 +167,12 @@ class SSHConnection(object):
         cmd.append(interpreter)
         return cmd
 
-    def scp_command(self, *filenames, **kwargs):
+    def scp_command(self, files, target):
         """ Build the command string to transfer the files 
         identifiend by the given filenames. 
         Include target(s) if specified. """
         cmd = ['/usr/bin/scp', '-q', '-r']
-        filenames = map(str, filenames)
+        files = map(str, files)
         if self.login:
             remotename = '%s@%s' % (self.login, self.server)
         else:
@@ -175,19 +184,12 @@ class SSHConnection(object):
         if self.port:
             cmd += [ '-P', self.port ]
 
-        if len(filenames) < 1:
+        if isinstance(files, basestring):
+            raise ValueError('"files" argument have to be iterable (list or tuple)')
+        if len(files) < 1:
             raise ValueError('You should name at least one file to copy')
 
-        if 'target' in kwargs:
-            cmd += filenames
-            target = kwargs['target']
-        else:
-            if len(filenames) > 1:
-                cmd += filenames[:-1]
-                target = filenames[-1]
-            else:
-                cmd.append = filenames[0]
-                target = filenames[0]
+        cmd += files
         cmd.append('%s:%s' % (remotename, target))
         return cmd
 

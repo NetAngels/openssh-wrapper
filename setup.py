@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='openssh-wrapper',
-    version='0.2.2',
+    version='0.3',
     description='OpenSSH python wrapper',
     author='NetAngels team',
     author_email='info@netangels.ru',
