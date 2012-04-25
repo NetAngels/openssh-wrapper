@@ -2,7 +2,7 @@
 """
 This is a wrapper around the openssh binaries ssh and scp.
 """
-import re, os, subprocess, signal, pipes
+import re, os, subprocess, signal, pipes, tempfile, shutil
 
 __all__ = 'SSHConnection SSHResult SSHError'.split()
 
@@ -129,7 +129,13 @@ class SSHConnection(object):
                       understandable by chown). Makes sence only if you open
                       your connection as root.
         """
-        scp_command = self.scp_command(files, target)
+        filenames, tmpdir = self.convert_files_to_filenames(files)
+
+        def cleanup_tmp_dir():
+            if tmpdir:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+
+        scp_command = self.scp_command(filenames, target)
         pipe = subprocess.Popen(scp_command,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, env=self.get_env())
@@ -142,27 +148,55 @@ class SSHConnection(object):
             # pipe.terminate() # only in python 2.6 allowed
             os.kill(pipe.pid, signal.SIGTERM)
             signal.alarm(0) # disable alarm
+            cleanup_tmp_dir()
             raise SSHError(stderr=str(exc))
         signal.alarm(0) # disable alarm
         returncode = pipe.returncode
         if returncode != 0: # ssh client error
+            cleanup_tmp_dir()
             raise SSHError(err.strip())
 
         if mode or owner:
-            targets = self.get_scp_targets(files, target)  # XXX: files VS filenames
+            targets = self.get_scp_targets(filenames, target)
             if mode:
                 cmd_chunks = ['chmod', mode] + targets
                 cmd = ' '.join([pipes.quote(chunk) for chunk in cmd_chunks])
                 result = self.run(cmd)
                 if result.returncode:
+                    cleanup_tmp_dir()
                     raise SSHError(result.stderr.strip())
             if owner:
                 cmd_chunks = ['chown', owner] + targets
                 cmd = ' '.join([pipes.quote(chunk) for chunk in cmd_chunks])
                 result = self.run(cmd)
                 if result.returncode:
+                    cleanup_tmp_dir()
                     raise SSHError(result.stderr.strip())
 
+    def convert_files_to_filenames(self, files):
+        """
+        Check for every file in list and save it locally to send to remote side, if needed
+        """
+        filenames = []
+        tmpdir = None
+        for file_obj in files:
+            if isinstance(file_obj, basestring):
+                filenames.append(file_obj)
+            else:
+                if not tmpdir:
+                    tmpdir = tempfile.mkdtemp()
+                if hasattr(file_obj, 'name'):
+                    basename = os.path.basename(file_obj.name)
+                    tmpname = os.path.join(tmpdir, basename)
+                    fd = open(tmpname, 'w')
+                    fd.write(file_obj.read())
+                    fd.close()
+                else:
+                    tmpfd, tmpname = tempfile.mkstemp(dir=tmpdir)
+                    os.write(tmpfd, file_obj.read())
+                    os.close(tmpfd)
+                filenames.append(tmpname)
+        return filenames, tmpdir
 
 
     def get_scp_targets(self, filenames, target):

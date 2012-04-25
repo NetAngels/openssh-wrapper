@@ -54,7 +54,7 @@ forwarding ::
     support
 
 
-And finally there is a sample which shows how to copy a file from local to
+There is a sample which shows how to copy a file from local to
 remote machine. You can also define owner and mode of the target ::
 
     >>> fd = open('test.txt', 'w')
@@ -67,3 +67,16 @@ remote machine. You can also define owner and mode of the target ::
     Hello world
     >>> print conn.run('ls -l  /tmp/test.txt').stdout
     -rw-rw-rw- 1 nobody nogroup ... /tmp/test.txt
+
+
+You can also pass file-like objects instead of filenames to scp method. Behind
+the scenes the method creates temporary files for you, send them to remote
+target and then removes everything which has been created::
+
+    >>> from StringIO import StringIO
+    >>> data = StringIO('test')
+    >>> from openssh_wrapper import SSHConnection
+    >>> conn = SSHConnection('localhost', login='root')
+    >>> conn.scp((data, ), target='/tmp/test.txt', mode='0644')
+    >>> print open('/tmp/test.txt').read()
+    test

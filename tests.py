@@ -57,7 +57,7 @@ class TestSCP(object):
 
     def setUp(self):
         self.c = SSHConnection('localhost', login='root')
-        self.c.run('rm -f /tmp/*.py')
+        self.c.run('rm -f /tmp/*.py /tmp/test*.txt')
 
     def test_scp(self):
         self.c.scp((test_file, ), target='/tmp')
@@ -80,3 +80,15 @@ class TestSCP(object):
         stat = os.stat('/tmp/tests.py')
         eq_(stat.st_uid, uid)
         eq_(stat.st_gid, gid)
+
+    def test_file_descriptors(self):
+        from StringIO import StringIO
+        # name is set explicitly as target
+        fd1 = StringIO('test')
+        self.c.scp((fd1, ), target='/tmp/test1.txt', mode='0644')
+        eq_(open('/tmp/test1.txt').read(), 'test')
+        # name is set explicitly in the name option
+        fd2 = StringIO('test')
+        fd2.name = 'test2.txt'
+        self.c.scp((fd2, ), target='/tmp', mode='0644')
+        eq_(open('/tmp/test2.txt').read(), 'test')
