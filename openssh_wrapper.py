@@ -50,7 +50,7 @@ class SSHConnection(object):
         else:
             self.configfile = None
         if identity_file:
-            self.identity_file = os.path.expanduser(configfile)
+            self.identity_file = os.path.expanduser(identity_file)
             if not os.path.isfile(self.identity_file):
                 raise SSHError('Key file %s is not found' % self.identity_file)
         else:
