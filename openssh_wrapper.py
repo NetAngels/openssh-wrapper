@@ -115,7 +115,7 @@ class SSHConnection(object):
             raise SSHError(err.strip())
         return SSHResult(command, out.strip(), err.strip(), returncode)
 
-    def scp(self, files, target, mode=None, owner=None):
+    def scp(self, files, target, mode=None, owner=None, fromLocal = True):
         """ Copy files identified by their names to remote location
 
         :param files: files or file-like objects to copy
@@ -135,7 +135,8 @@ class SSHConnection(object):
             if tmpdir:
                 shutil.rmtree(tmpdir, ignore_errors=True)
 
-        scp_command = self.scp_command(filenames, target)
+        scp_command = self.scp_command(filenames, target, fromLocal)
+        print "SCP command:", scp_command
         pipe = subprocess.Popen(scp_command,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, env=self.get_env())
@@ -238,7 +239,7 @@ class SSHConnection(object):
         cmd.append(interpreter)
         return cmd
 
-    def scp_command(self, files, target):
+    def scp_command(self, files, target, fromLocal = True):
         """ Build the command string to transfer the files 
         identifiend by the given filenames. 
         Include target(s) if specified. """
@@ -260,8 +261,13 @@ class SSHConnection(object):
         if len(files) < 1:
             raise ValueError('You should name at least one file to copy')
 
-        cmd += files
-        cmd.append('%s:%s' % (remotename, target))
+        if fromLocal:
+            cmd += files
+            cmd.append('%s:%s' % (remotename, target))
+        else:
+            cmd.append('%s:%s' % (remotename, target))
+            cmd += files
+            
         return cmd
 
     def get_env(self):
