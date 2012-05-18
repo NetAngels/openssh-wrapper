@@ -2,9 +2,16 @@
 """
 This is a wrapper around the openssh binaries ssh and scp.
 """
-import re, os, subprocess, signal, pipes, tempfile, shutil
+import re
+import os
+import subprocess
+import signal
+import pipes
+import tempfile
+import shutil
 
 __all__ = 'SSHConnection SSHResult SSHError'.split()
+
 
 class SSHConnection(object):
     """
@@ -97,7 +104,7 @@ class SSHConnection(object):
                 stderr=subprocess.PIPE, env=self.get_env())
         try:
             signal.signal(signal.SIGALRM, _timeout_handler)
-        except ValueError, _: #signal only works in main thread
+        except ValueError:  # signal only works in main thread
             pass
         signal.alarm(self.timeout)
         out = err = ""
@@ -106,12 +113,12 @@ class SSHConnection(object):
         except IOError, exc:
             # pipe.terminate() # only in python 2.6 allowed
             os.kill(pipe.pid, signal.SIGTERM)
-            signal.alarm(0) # disable alarm
+            signal.alarm(0)  # disable alarm
             raise SSHError(str(exc))
 
-        signal.alarm(0) # disable alarm
+        signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
-        if returncode == 255: # ssh client error
+        if returncode == 255:  # ssh client error
             raise SSHError(err.strip())
         return SSHResult(command, out.strip(), err.strip(), returncode)
 
@@ -147,12 +154,12 @@ class SSHConnection(object):
         except IOError, exc:
             # pipe.terminate() # only in python 2.6 allowed
             os.kill(pipe.pid, signal.SIGTERM)
-            signal.alarm(0) # disable alarm
+            signal.alarm(0)  # disable alarm
             cleanup_tmp_dir()
             raise SSHError(stderr=str(exc))
-        signal.alarm(0) # disable alarm
+        signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
-        if returncode != 0: # ssh client error
+        if returncode != 0:  # ssh client error
             cleanup_tmp_dir()
             raise SSHError(err.strip())
 
@@ -198,7 +205,6 @@ class SSHConnection(object):
                 filenames.append(tmpname)
         return filenames, tmpdir
 
-
     def get_scp_targets(self, filenames, target):
         """
         Given a list of filenames and a target name return the full list of targets
@@ -218,29 +224,28 @@ class SSHConnection(object):
         else:
             return [target, ]
 
-
     def ssh_command(self, interpreter, forward_ssh_agent):
         """ Build the command string to connect to the server
         and start the given interpreter. """
         interpreter = str(interpreter)
         cmd = ['/usr/bin/ssh', ]
         if self.login:
-            cmd += [ '-l', self.login ]
+            cmd += ['-l', self.login]
         if self.configfile:
-            cmd += [ '-F', self.configfile ]
+            cmd += ['-F', self.configfile]
         if self.identity_file:
-            cmd += [ '-i', self.identity_file ]
+            cmd += ['-i', self.identity_file]
         if forward_ssh_agent:
             cmd.append('-A')
         if self.port:
-            cmd += [ '-p', str(self.port) ]
+            cmd += ['-p', str(self.port)]
         cmd.append(self.server)
         cmd.append(interpreter)
         return cmd
 
     def scp_command(self, files, target):
-        """ Build the command string to transfer the files 
-        identifiend by the given filenames. 
+        """ Build the command string to transfer the files
+        identifiend by the given filenames.
         Include target(s) if specified. """
         cmd = ['/usr/bin/scp', '-q', '-r']
         files = map(str, files)
@@ -249,11 +254,11 @@ class SSHConnection(object):
         else:
             remotename = self.server
         if self.configfile:
-            cmd += [ '-F', self.configfile ]
+            cmd += ['-F', self.configfile]
         if self.identity_file:
-            cmd += [ '-i', self.identity_file ]
+            cmd += ['-i', self.identity_file]
         if self.port:
-            cmd += [ '-P', self.port ]
+            cmd += ['-P', self.port]
 
         if isinstance(files, basestring):
             raise ValueError('"files" argument have to be iterable (list or tuple)')
@@ -275,7 +280,7 @@ class SSHConnection(object):
 
 def _timeout_handler(signum, frame):
     """ This function is called when ssh takes too long to connect. """
-    raise IOError, 'SSH connect timeout'
+    raise IOError('SSH connect timeout')
 
 
 class SSHResult(object):
@@ -302,6 +307,7 @@ class SSHResult(object):
         ret.append(u'stderr: %s' % unicode(self.stderr))
         ret.append(u'returncode: %s' % unicode(self.returncode))
         return u'\n'.join(ret)
+
 
 class SSHError(Exception):
     """
