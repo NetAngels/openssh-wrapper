@@ -179,6 +179,7 @@ class SSHConnection(object):
                 if result.returncode:
                     cleanup_tmp_dir()
                     raise SSHError(result.stderr.strip())
+        cleanup_tmp_dir()
 
     def convert_files_to_filenames(self, files):
         """
