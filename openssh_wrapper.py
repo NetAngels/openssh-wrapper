@@ -156,7 +156,7 @@ class SSHConnection(object):
             os.kill(pipe.pid, signal.SIGTERM)
             signal.alarm(0)  # disable alarm
             cleanup_tmp_dir()
-            raise SSHError(stderr=str(exc))
+            raise SSHError(str(exc))
         signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
         if returncode != 0:  # ssh client error
