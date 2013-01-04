@@ -22,7 +22,9 @@ setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
     ),
 )
