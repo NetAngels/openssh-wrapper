@@ -146,7 +146,10 @@ class SSHConnection(object):
         pipe = subprocess.Popen(scp_command,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, env=self.get_env())
-        signal.signal(signal.SIGALRM, _timeout_handler)
+        try:
+            signal.signal(signal.SIGALRM, _timeout_handler)
+        except ValueError:  # signal only works in main thread
+            pass
         signal.alarm(self.timeout)
         err = ""
         try:
