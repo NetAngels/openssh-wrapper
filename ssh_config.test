@@ -1,2 +1,3 @@
 Host *
     PasswordAuthentication no
+    BatchMode yes
