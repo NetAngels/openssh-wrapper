@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='openssh-wrapper',
-    version='0.4',
+    version='0.5',
     description='OpenSSH python wrapper',
     author='NetAngels team',
     author_email='info@netangels.ru',
@@ -19,7 +19,7 @@ setup(
     license = 'BSD License',
     py_modules=['openssh_wrapper'],
     classifiers=(
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Topic :: Software Development :: Libraries :: Python Modules',
