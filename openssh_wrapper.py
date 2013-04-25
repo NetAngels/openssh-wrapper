@@ -6,11 +6,12 @@ import io
 import re
 import os
 import sys
-import subprocess
-import signal
 import pipes
-import tempfile
+import signal
 import shutil
+import getpass
+import tempfile
+import subprocess
 
 __all__ = 'SSHConnection SSHResult SSHError b u b_list u_list'.split()
 
@@ -72,7 +73,7 @@ class SSHConnection(object):
     """
 
     def __init__(self, server, login=None, port=None, configfile=None,
-            identity_file=None, ssh_agent_socket=None, timeout=60):
+                 identity_file=None, ssh_agent_socket=None, timeout=60, debug=False):
         """
         Create new object to establish SSH connection to remote servers
 
@@ -98,6 +99,8 @@ class SSHConnection(object):
         self.port = port
         self.timeout = timeout
         self.check_server(server)
+        self.user = getpass.getuser()
+        self.debug = debug
         if login:
             self.check_login(login)
             self.login = b(login)
@@ -177,12 +180,14 @@ class SSHConnection(object):
             # pipe.terminate() # only in python 2.6 allowed
             os.kill(pipe.pid, signal.SIGTERM)
             signal.alarm(0)  # disable alarm
-            raise SSHError(str(exc))
+            raise SSHError("%s (under %s): %s" % (
+                ' '.join(ssh_command), self.user, str(exc)))
 
         signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
         if returncode == 255:  # ssh client error
-            raise SSHError(err.strip())
+            raise SSHError("%s (under %s): %s" % (
+                ' '.join(ssh_command), self.user, err.strip()))
         return SSHResult(command, out.strip(), err.strip(), returncode)
 
     def scp(self, files, target, mode=None, owner=None):
@@ -233,12 +238,14 @@ class SSHConnection(object):
             os.kill(pipe.pid, signal.SIGTERM)
             signal.alarm(0)  # disable alarm
             cleanup_tmp_dir()
-            raise SSHError(str(exc))
+            raise SSHError("%s (under %s): %s" % (
+                ' '.join(scp_command), self.user, str(exc)))
         signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
         if returncode != 0:  # ssh client error
             cleanup_tmp_dir()
-            raise SSHError(err.strip())
+            raise SSHError("%s (under %s): %s" % (
+                ' '.join(scp_command), self.user, err.strip()))
 
         if mode or owner:
             targets = self.get_scp_targets(filenames, target)
@@ -248,14 +255,14 @@ class SSHConnection(object):
                 result = self.run(cmd)
                 if result.returncode:
                     cleanup_tmp_dir()
-                    raise SSHError(result.stderr.strip())
+                    raise SSHError("change mode: %s" % result.stderr.strip())
             if owner:
                 cmd_chunks = ['chown', owner] + targets
                 cmd = b_quote(cmd_chunks)
                 result = self.run(cmd)
                 if result.returncode:
                     cleanup_tmp_dir()
-                    raise SSHError(result.stderr.strip())
+                    raise SSHError("change owner: %s" % result.stderr.strip())
         cleanup_tmp_dir()
 
     def convert_files_to_filenames(self, files):
@@ -329,6 +336,8 @@ class SSHConnection(object):
         """
         interpreter = b(interpreter)
         cmd = ['/usr/bin/ssh', ]
+        if self.debug:
+            cmd += ['-vvvv']
         if self.login:
             cmd += ['-l', self.login]
         if self.configfile:
@@ -349,7 +358,7 @@ class SSHConnection(object):
 
         Include target(s) if specified. Internal function
         """
-        cmd = ['/usr/bin/scp', '-q', '-r']
+        cmd = ['/usr/bin/scp', self.debug and '-vvvv' or '-q', '-r']
         files = b_list(files)
         if self.login:
             remotename = '%s@%s' % (u(self.login), u(self.server))
