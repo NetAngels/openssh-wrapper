@@ -264,6 +264,69 @@ class SSHConnection(object):
                     cleanup_tmp_dir()
                     raise SSHError("change owner: %s" % result.stderr.strip())
         cleanup_tmp_dir()
+        
+    def scp_down(self, remotefile, localtarget, mode=None, owner=None):
+        """ Copy files identified by their remote names to local location
+
+        :param remotefile: file name representing the remote file to download
+        via scp
+
+        :param target: local file or directory to copy remote file to.
+
+        :param mode: optional parameter to define mode for the downloaded file
+        (must be a string in the form understandable by chmod, like "0644")
+
+        :param owner: optional parameter to define user and group for
+        downloaded file (must be a string in the form understandable by chown).
+        Makes sense only if you open your connection as root.
+
+        :return: None
+        :raise: SSHError
+        """
+        
+        scp_command = self.scp_down_command(remotefile, localtarget)
+        if scp_command:
+            pipe = subprocess.Popen(scp_command,
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, env=self.get_env())
+            try:
+                signal.signal(signal.SIGALRM, _timeout_handler)
+            except ValueError:  # signal only works in main thread
+                pass
+            signal.alarm(self.timeout)
+            err = b('')
+            try:
+                _, err = pipe.communicate()
+            except IOError as exc:
+                # pipe.terminate() # only in python 2.6 allowed
+                os.kill(pipe.pid, signal.SIGTERM)
+                signal.alarm(0)  # disable alarm
+                cleanup_tmp_dir()
+                raise SSHError("%s (under %s): %s" % (
+                    ' '.join(scp_command), self.user, str(exc)))
+            signal.alarm(0)  # disable alarm
+            returncode = pipe.returncode
+            if returncode != 0:  # ssh client error
+                cleanup_tmp_dir()
+                raise SSHError("%s (under %s): %s" % (
+                    ' '.join(scp_command), self.user, err.strip()))
+    
+            if mode or owner:
+                targets = self.get_scp_targets(filenames, target)
+                if mode:
+                    cmd_chunks = ['chmod', mode] + targets
+                    cmd = b_quote(cmd_chunks)
+                    result = self.run(cmd)
+                    if result.returncode:
+                        cleanup_tmp_dir()
+                        raise SSHError("change mode: %s" % result.stderr.strip())
+                if owner:
+                    cmd_chunks = ['chown', owner] + targets
+                    cmd = b_quote(cmd_chunks)
+                    result = self.run(cmd)
+                    if result.returncode:
+                        cleanup_tmp_dir()
+                        raise SSHError("change owner: %s" % result.stderr.strip())
 
     def convert_files_to_filenames(self, files):
         """
@@ -351,6 +414,30 @@ class SSHConnection(object):
         cmd.append(self.server)
         cmd.append(interpreter)
         return b_list(cmd)
+    
+    def scp_down_command(self, remotefile, localtarget):
+        """
+        Build the command string to transfer the files identified by filenames.
+
+        Include target(s) if specified. Internal function
+        """
+        if remotefile and localtarget:
+            cmd = ['/usr/bin/scp', self.debug and '-vvvv' or '-q', '-r']
+            if self.login:
+                remotename = '%s@%s' % (u(self.login), u(self.server))
+            else:
+                remotename = self.server
+            if self.configfile:
+                cmd += ['-F', self.configfile]
+            if self.identity_file:
+                cmd += ['-i', self.identity_file]
+            if self.port:
+                cmd += ['-P', self.port]
+            cmd.append('%s:%s' % (remotename, remotefile))
+            cmd.append(localtarget)
+            
+            return b_list(cmd)
+        return None
 
     def scp_command(self, files, target):
         """
