@@ -417,9 +417,7 @@ class SSHConnection(object):
     
     def scp_down_command(self, remotefile, localtarget):
         """
-        Build the command string to transfer the files identified by filenames.
-
-        Include target(s) if specified. Internal function
+	Build the command string to transfer the file identified by remotefile.
         """
         if remotefile and localtarget:
             cmd = ['/usr/bin/scp', self.debug and '-vvvv' or '-q', '-r']
