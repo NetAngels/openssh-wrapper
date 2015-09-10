@@ -448,9 +448,9 @@ class SSHResult(object):
     def repr_binary(self):
         """ Build simple unicode representation from all member values. """
         ret = []
-        ret += [b('command: '), self.command, b('\n')]
-        ret += [b('stdout: '), self.stdout, b('\n')]
-        ret += [b('stderr: '), self.stderr, b('\n')]
+        ret += [b('command: '), b(self.command), b('\n')]
+        ret += [b('stdout: '), b(self.stdout), b('\n')]
+        ret += [b('stderr: '), b(self.stderr), b('\n')]
         ret += [b('returncode: '), b(text(self.returncode))]
         return b('').join(ret)
 
