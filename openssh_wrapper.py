@@ -188,7 +188,7 @@ class SSHConnection(object):
         if returncode == 255:  # ssh client error
             raise SSHError("%s (under %s): %s" % (
                 ' '.join(ssh_command), self.user, err.strip()))
-        return SSHResult(command, out.strip(), err.strip(), returncode)
+        return SSHResult(command.encode('utf-8', 'ignore'), out.strip(), err.strip(), returncode)
 
     def scp(self, files, target, mode=None, owner=None):
         """ Copy files identified by their names to remote location
@@ -455,7 +455,7 @@ class SSHResult(object):
         return b('').join(ret)
 
     def repr_text(self):
-        return self.repr_binary().encode('utf-8', 'ignore')
+        return self.repr_binary().decode('utf-8', 'ignore')
 
 
 class SSHError(Exception):
