@@ -71,6 +71,16 @@ class TestSCP(object):
         self.c.scp((test_file, ), target='/tmp')
         assert os.path.isfile('/tmp/tests.py')
 
+    def test_scp_int_port(self):
+        c = SSHConnection('localhost', login='root', port=22)
+        c.scp((test_file, ), target='/tmp')
+        assert os.path.isfile('/tmp/tests.py')
+
+    def test_scp_str_port(self):
+        c = SSHConnection('localhost', login='root', port='22')
+        c.scp((test_file, ), target='/tmp')
+        assert os.path.isfile('/tmp/tests.py')
+
     def test_scp_to_nonexistent_dir(self):
         with pytest.raises(SSHError):
             self.c.scp((test_file, ), target='/abc/def/')
