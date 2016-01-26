@@ -181,13 +181,13 @@ class SSHConnection(object):
             os.kill(pipe.pid, signal.SIGTERM)
             signal.alarm(0)  # disable alarm
             raise SSHError("%s (under %s): %s" % (
-                ' '.join(ssh_command), self.user, str(exc)))
+                ' '.join(u_list(ssh_command)), self.user, str(exc)))
 
         signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
         if returncode == 255:  # ssh client error
             raise SSHError("%s (under %s): %s" % (
-                ' '.join(ssh_command), self.user, err.strip()))
+                ' '.join(u_list(ssh_command)), self.user, err.strip()))
         return SSHResult(command, out.strip(), err.strip(), returncode)
 
     def scp(self, files, target, mode=None, owner=None):
@@ -239,13 +239,13 @@ class SSHConnection(object):
             signal.alarm(0)  # disable alarm
             cleanup_tmp_dir()
             raise SSHError("%s (under %s): %s" % (
-                ' '.join(scp_command), self.user, str(exc)))
+                ' '.join(u_list(scp_command)), self.user, str(exc)))
         signal.alarm(0)  # disable alarm
         returncode = pipe.returncode
         if returncode != 0:  # ssh client error
             cleanup_tmp_dir()
             raise SSHError("%s (under %s): %s" % (
-                ' '.join(scp_command), self.user, err.strip()))
+                ' '.join(u_list(scp_command)), self.user, err.strip()))
 
         if mode or owner:
             targets = self.get_scp_targets(filenames, target)
