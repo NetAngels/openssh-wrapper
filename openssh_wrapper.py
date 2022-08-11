@@ -369,7 +369,7 @@ class SSHConnection(object):
         if self.identity_file:
             cmd += ['-i', self.identity_file]
         if self.port:
-            cmd += ['-P', self.port]
+            cmd += ['-P', str(self.port)]
 
         if isinstance(files, (text, bytes)):
             raise ValueError('"files" argument have to be iterable (list or tuple)')
